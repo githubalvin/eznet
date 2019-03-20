@@ -1,8 +1,7 @@
 #pragma once
 
-#include <WinSock2.h>
-
 #ifdef WIN32
+#include <WinSock2.h>
 #define SOCKLEN int
 #else
 #define SOCKET int
