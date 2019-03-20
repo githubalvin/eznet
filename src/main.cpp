@@ -7,11 +7,13 @@ using namespace std;
 
 int main(int argc, char *argv[]) {
 	Network network;
-	if (network.initialize(6000)!= 0) {
+	if (network.initialize(6001)!= 0) {
 		printf("network initialize failed\n");
+		network.finalize();
+		return -1;
 	};
 	EZSocket *sock;
-	network.connet(&sock, "127.0.0.1", 6000);
+	network.connet(&sock, "127.0.0.1", 6001);
 	char buf[] = "hello";
 
 	int cnt = 5;

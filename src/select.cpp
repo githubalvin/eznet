@@ -89,7 +89,7 @@ namespace eznet {
 	}
 
     int EventLoop::listen(int port) {
-        this->listen_sock = socket(PF_INET, SOCK_STREAM, 0);
+        this->listen_sock = ::socket(PF_INET, SOCK_STREAM, 0);
         memset(&this->serv_addr, 0, sizeof(this->serv_addr));
         this->serv_addr.sin_family = AF_INET;
         this->serv_addr.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -105,6 +105,13 @@ namespace eznet {
         printf("listen: %d\n", port);
         return 0;
     }
+
+	int EventLoop::socket() {
+		return ::socket(PF_INET, SOCK_STREAM, 0);
+	}
+	void EventLoop::closesocket(int sock) {
+		::closesocket(sock);
+	}
 
     int EventLoop::process(int wait) {
         auto copy_reads = this->read_fds;
@@ -132,6 +139,10 @@ namespace eznet {
 					SOCKLEN sz = sizeof(new_addr);
 					SOCKET new_sock = accept(this->listen_sock, (SOCKADDR*)&new_addr, &sz);
 					FD_SET(new_sock, &this->read_fds);
+
+					EZSocket *ezsock;
+					this->network->new_socket(&ezsock, inet_ntoa(new_addr.sin_addr), new_addr.sin_port, new_sock);
+					//ezsocket notify
 					std::cout << "accept new connection: " << inet_ntoa(new_addr.sin_addr) << std::endl;
 				}
                 else {
@@ -139,6 +150,7 @@ namespace eznet {
                     if(str_len == 0) {
                         FD_CLR(this->read_fds.fd_array[i], &this->read_fds);
                         closesocket(copy_reads.fd_array[i]);
+						this->network->remove_socket(copy_reads.fd_array[i]);
                     }
                     else {
 						forward(this->read_fds.fd_array[i], this->buf, str_len);
@@ -165,10 +177,15 @@ namespace eznet {
 			serv_addr.sin_port = htons(cmd->port);
 
 			if (::connect(cmd->sock, (SOCKADDR*)&serv_addr, sizeof(serv_addr)) == SOCKET_ERROR) {
+				this->network->remove_socket(cmd->sock);
 				std::cout << "connet " << cmd->ip << ":" << cmd->port << " failed!" << std::endl;
 				return -1;
 			}
 
+			EZSocket *ezsock;
+			this->network->find_socket(&ezsock, cmd->sock);
+			if (nullptr != ezsock)
+				ezsock->set_enable(true);
 			FD_SET(cmd->sock, &this->read_fds);
 			std::cout << "connet " << cmd->ip << ":" << cmd->port << " suc!" << std::endl;
 			break;
@@ -181,6 +198,7 @@ namespace eznet {
 		case sock_type::SOCKET_CLOSE:
 			FD_CLR(cmd->sock, &this->read_fds);
 			closesocket(cmd->sock);
+			this->network->remove_socket(cmd->sock);
 			std::cout << "closesock " << cmd->sock << std::endl;
 			break;
 

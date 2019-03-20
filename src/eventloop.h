@@ -27,6 +27,8 @@ namespace eznet {
         virtual int sendcmd(void* buf, size_t sz) = 0;
         virtual int processcmd(void* buf, size_t sz) = 0;
 		virtual int listen(int port) = 0;
+		virtual int socket() = 0;
+		virtual void closesocket(int sock) = 0;
 		virtual int forward(SOCKET &sock, char* buf, size_t sz) = 0;
     protected:
         Network* network;

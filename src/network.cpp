@@ -8,7 +8,8 @@
 
 namespace eznet {
     Network::Network()
-        : loop(nullptr) {}
+        : loop(nullptr),
+          sockets() {}
 
     Network::~Network() {
         delete this->loop;
@@ -23,6 +24,9 @@ namespace eznet {
     }
 
     int Network::finalize() {
+		for (auto &s : this->sockets)
+			closesock(*s.second);
+		//��Ҫ�ȴ������¼���������սᣬ�ȱ���ʵ��
         return this->loop->finalize();
     }
 
@@ -31,12 +35,35 @@ namespace eznet {
         return 0;
     }
 
+
+    void Network::find_socket(EZSocket **sock, int index) const {
+		auto iter = this->sockets.find(index);
+		if (iter != this->sockets.end())
+			*sock = iter->second;
+    }
+
+    void Network::new_socket(EZSocket **sock, const char *ip, int port, int s) {
+		if(0==s)
+			s = this->loop->socket();
+		auto ezsock = new EZSocket(this, ip, port);
+		ezsock->set_sock(s);
+		*sock = ezsock;
+        this->sockets[ezsock->get_sock()] = ezsock;
+    }
+
+	void Network::add_socket(EZSocket *sock) {
+		this->sockets[sock->get_sock()] = sock;
+	}
+
+	void Network::remove_socket(int index) {
+		this->sockets.erase(index);
+	}
+
     void Network::connet(EZSocket **sock, const char *ip, int port) {
         /*TODO: to solve multi-thread problem
         */
-        auto s = new EZSocket(this, ip, port);
-        *sock = s;
-
+        new_socket(sock, ip, port, 0);
+        auto s = *sock;
         sock_cmd cmd;
         cmd.tp = SOCKET_CREATE;
         cmd.sock = s->get_sock();

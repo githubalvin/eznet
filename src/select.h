@@ -20,6 +20,8 @@ namespace eznet {
         int sendcmd(void* buf, size_t sz);
         int processcmd(void* buf, size_t sz);
         int listen(int port);
+		int socket();
+		void closesocket(int sock);
         int forward(SOCKET &sock, char* buf, size_t sz);
 
     private:

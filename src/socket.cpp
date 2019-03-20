@@ -8,9 +8,8 @@ namespace eznet {
           host_ip(ip),
           host_port(port),
           sock(0),
-          sock_handle(nullptr) {
-              this->sock = socket(PF_INET, SOCK_STREAM, 0);
-          }
+          sock_handle(nullptr),
+          enable(false) {}
 
     EZSocket::~EZSocket() {
         // close socket
